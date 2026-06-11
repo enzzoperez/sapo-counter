@@ -6,23 +6,12 @@ type Props = {
   active: boolean;
   onPress: () => void;
   disabled?: boolean;
-  activeColor?: string;
 };
 
-export function Pill({
-  label,
-  active,
-  onPress,
-  disabled,
-  activeColor = colors.accent,
-}: Props) {
+export function Pill({ label, active, onPress, disabled }: Props) {
   return (
     <TouchableOpacity
-      style={[
-        styles.pill,
-        active && { backgroundColor: activeColor, borderColor: activeColor },
-        disabled && styles.disabled,
-      ]}
+      style={[styles.pill, active && styles.pillActive, disabled && styles.disabled]}
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.7}
@@ -39,9 +28,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.bgPrimary,
+    backgroundColor: colors.bgElevated,
+  },
+  pillActive: {
+    backgroundColor: colors.accentBg,
+    borderColor: colors.accentBorder,
   },
   disabled: { opacity: 0.4 },
   label: { ...typography.bodyMedium, color: colors.textSecondary },
-  labelActive: { color: colors.bgPrimary },
+  labelActive: { color: colors.accent },
 });

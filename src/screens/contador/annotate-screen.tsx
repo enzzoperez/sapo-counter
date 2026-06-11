@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { colors, spacing, radius, typography } from "@/theme/theme";
-import { Numpad } from "@/components/numpad";
+import { Numpad } from "@/components/contador/numpad";
 import { useGame } from "@/state/game-context";
 
 // null = untouched (shows "—"), string = digits entered (may be "0")
@@ -35,9 +35,7 @@ export function AnnotateScreen() {
   const { participants, currentParticipantIdx, currentThrowIdx, format } = state;
   const participant = participants[currentParticipantIdx];
   const currentMemberIdx =
-    format === "teams"
-      ? Math.floor(currentThrowIdx / participants.length)
-      : 0;
+    format === "teams" ? Math.floor(currentThrowIdx / participants.length) : 0;
   const currentMember =
     format === "teams" ? participant.members?.[currentMemberIdx] : null;
 
@@ -52,10 +50,7 @@ export function AnnotateScreen() {
 
   function handleNumpadPress(key: string) {
     setRawInput((prev) => {
-      if (prev === null) {
-        // First press: "00" → "0", anything else → that digit
-        return key === "00" ? "0" : key;
-      }
+      if (prev === null) return key === "00" ? "0" : key;
       return applyInput(prev, key);
     });
   }
@@ -90,16 +85,17 @@ export function AnnotateScreen() {
 
       {/* Total display */}
       <View style={styles.totalArea}>
-        <Text style={styles.totalLabel}>TOTAL DEL TURNO</Text>
-        <Text
-          style={[
-            styles.totalValue,
-            rawInput === null && styles.totalValueEmpty,
-            { color: rawInput !== null ? accentColor : colors.textTertiary },
-          ]}
-        >
-          {displayValue}
-        </Text>
+        <View style={styles.displayCard}>
+          <Text style={styles.totalLabel}>TOTAL DEL TURNO</Text>
+          <Text
+            style={[
+              styles.totalValue,
+              { color: rawInput !== null ? accentColor : colors.textDisabled },
+            ]}
+          >
+            {displayValue}
+          </Text>
+        </View>
       </View>
 
       {/* Fixed bottom: numpad + button */}
@@ -110,13 +106,21 @@ export function AnnotateScreen() {
         <TouchableOpacity
           style={[
             styles.confirmBtn,
-            { backgroundColor: accentColor },
-            confirmDisabled && styles.confirmBtnDisabled,
+            confirmDisabled
+              ? styles.confirmBtnDisabled
+              : { backgroundColor: accentColor },
           ]}
           onPress={handleConfirm}
           disabled={confirmDisabled}
         >
-          <Text style={styles.confirmBtnText}>Confirmar turno</Text>
+          <Text
+            style={[
+              styles.confirmBtnText,
+              confirmDisabled && styles.confirmBtnTextDisabled,
+            ]}
+          >
+            Confirmar turno
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -124,7 +128,7 @@ export function AnnotateScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgPrimary },
+  container: { flex: 1, backgroundColor: colors.bg },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -137,28 +141,39 @@ const styles = StyleSheet.create({
   backBtn: { width: 40 },
   headerLabels: { alignItems: "center", gap: 2 },
   headerMicro: { ...typography.micro, color: colors.textTertiary },
-  headerName: { ...typography.bodyMedium, color: colors.textPrimary },
+  headerName: { ...typography.subtitle, color: colors.textPrimary },
   totalArea: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: spacing.sm,
+    padding: spacing.lg,
+  },
+  displayCard: {
+    alignSelf: "stretch",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.md,
+    paddingVertical: spacing.xxxl,
+    backgroundColor: colors.bgElevated,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    borderColor: colors.border,
   },
   totalLabel: { ...typography.micro, color: colors.textTertiary },
   totalValue: { ...typography.display },
-  totalValueEmpty: { ...typography.display },
   bottom: {
     padding: spacing.lg,
     gap: spacing.md,
     borderTopWidth: 0.5,
     borderTopColor: colors.border,
-    backgroundColor: colors.bgPrimary,
+    backgroundColor: colors.bgElevated,
   },
   confirmBtn: {
     borderRadius: radius.lg,
     paddingVertical: spacing.lg,
     alignItems: "center",
   },
-  confirmBtnDisabled: { opacity: 0.35 },
-  confirmBtnText: { ...typography.bodyMedium, color: colors.bgPrimary },
+  confirmBtnDisabled: { backgroundColor: colors.disabled },
+  confirmBtnText: { ...typography.bodyMedium, color: colors.accentDark },
+  confirmBtnTextDisabled: { color: colors.disabledText },
 });

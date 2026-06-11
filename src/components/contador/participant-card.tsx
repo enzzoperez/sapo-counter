@@ -1,9 +1,10 @@
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { colors, spacing, radius, typography } from "@/theme/theme";
+import { Avatar } from "@/components/shared/avatar";
 import { TurnCell } from "./turn-cell";
 import { ProgressBar } from "./progress-bar";
-import { totalScore } from "../helpers";
-import type { Participant, Mode, TurnScore } from "../types";
+import { totalScore } from "@/helpers";
+import type { Participant, Mode, TurnScore } from "@/types";
 
 type Props = {
   participant: Participant;
@@ -15,36 +16,6 @@ type Props = {
   totalTurns?: number;
   currentTurnIdx: number;
 };
-
-function Avatar({
-  name,
-  color,
-  size = 28,
-}: {
-  name: string;
-  color?: string;
-  size?: number;
-}) {
-  const bg = color ?? colors.accentBg;
-  const fg = color ? colors.bgPrimary : colors.accentText;
-  return (
-    <View
-      style={[
-        styles.avatar,
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: bg,
-        },
-      ]}
-    >
-      <Text style={[styles.avatarText, { color: fg }]}>
-        {name.charAt(0).toUpperCase() || "?"}
-      </Text>
-    </View>
-  );
-}
 
 function getCellState(
   cellIdx: number,
@@ -63,14 +34,15 @@ function memberBreakdownForTurn(turn: TurnScore): string {
 
 function memberAccumulatedBreakdown(participant: Participant): string {
   if (!participant.members) return "";
-  const memberTotals = participant.members.map((m, mi) => {
-    const total = participant.turns.reduce((sum, t) => {
-      if (Array.isArray(t)) return sum + (t[mi] ?? 0);
-      return sum;
-    }, 0);
-    return `${m.name} ${total}`;
-  });
-  return memberTotals.join(" · ");
+  return participant.members
+    .map((m, mi) => {
+      const total = participant.turns.reduce<number>(
+        (sum, t) => (Array.isArray(t) ? sum + (t[mi] ?? 0) : sum),
+        0,
+      );
+      return `${m.name} ${total}`;
+    })
+    .join(" · ");
 }
 
 export function ParticipantCard({
@@ -85,9 +57,6 @@ export function ParticipantCard({
 }: Props) {
   const score = totalScore(participant);
   const accentColor = participant.color ?? colors.accent;
-  const borderStyle = isActive
-    ? { borderWidth: 2, borderColor: accentColor }
-    : { borderWidth: 0.5, borderColor: colors.border };
 
   const cellCount =
     mode === "turns"
@@ -95,18 +64,22 @@ export function ParticipantCard({
       : Math.max(participant.turns.length + 1, currentTurnIdx + 2);
 
   return (
-    <View style={[styles.card, borderStyle]}>
+    <View style={[styles.card, isActive ? styles.cardActive : styles.cardIdle]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Avatar name={participant.name} color={participant.color} />
+          <Avatar
+            name={participant.name}
+            color={participant.color}
+            active={isActive}
+          />
           <View style={styles.nameBlock}>
             <Text style={styles.name}>{participant.name}</Text>
             {isActive && (
               <Text style={styles.activeBadge}>
                 {activeMemberIdx !== undefined && participant.members
-                  ? `▶ ${participant.members[activeMemberIdx]?.name ?? "tirando"}`
-                  : "▶ tirando"}
+                  ? `▶ Tirando: ${participant.members[activeMemberIdx]?.name ?? ""}`
+                  : "▶ Tirando ahora"}
               </Text>
             )}
           </View>
@@ -114,7 +87,7 @@ export function ParticipantCard({
         <View style={styles.scoreBlock}>
           {mode === "goal" && target ? (
             <Text style={styles.score}>
-              {score} <Text style={styles.scoreTertiary}>/ {target}</Text>
+              {score} <Text style={styles.scoreTarget}>/{target}</Text>
             </Text>
           ) : (
             <Text style={styles.score}>{score}</Text>
@@ -133,9 +106,7 @@ export function ParticipantCard({
 
       {/* Progress bar (goal mode) */}
       {mode === "goal" && target != null && (
-        <View style={styles.progressWrap}>
-          <ProgressBar value={score} max={target} color={accentColor} />
-        </View>
+        <ProgressBar value={score} max={target} color={accentColor} />
       )}
 
       {/* Turn cells */}
@@ -171,10 +142,21 @@ export function ParticipantCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.bgPrimary,
     borderRadius: radius.lg,
     padding: spacing.lg,
     gap: spacing.md,
+  },
+  cardIdle: {
+    backgroundColor: colors.bgElevated,
+    borderWidth: 0.5,
+    borderColor: colors.border,
+  },
+  // Approximates the spec's subtle accentBg→bgElevated gradient with a flat
+  // accent-tinted surface + accent border (no extra gradient lib).
+  cardActive: {
+    backgroundColor: colors.accentBg,
+    borderWidth: 1,
+    borderColor: colors.accent,
   },
   header: {
     flexDirection: "row",
@@ -187,26 +169,24 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     flex: 1,
   },
-  avatar: { alignItems: "center", justifyContent: "center" },
-  avatarText: { ...typography.captionMedium },
   nameBlock: { gap: 2 },
-  name: { ...typography.bodyMedium, color: colors.textPrimary },
-  activeBadge: { ...typography.caption, color: colors.accent },
+  name: { ...typography.itemName, color: colors.textPrimary },
+  activeBadge: { ...typography.micro, color: colors.accent, letterSpacing: 0 },
   scoreBlock: { alignItems: "flex-end" },
-  score: { ...typography.score, color: colors.textPrimary },
-  scoreTertiary: {
-    ...typography.captionMedium,
-    color: colors.textTertiary,
+  score: {
+    ...typography.score,
+    color: colors.textPrimary,
+    fontVariant: ["tabular-nums"],
   },
+  scoreTarget: { ...typography.caption, color: colors.textMuted },
   memberPill: {
     alignSelf: "flex-start",
-    backgroundColor: colors.bgSecondary,
+    backgroundColor: colors.bg,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },
   memberPillText: { ...typography.caption, color: colors.textSecondary },
-  progressWrap: { marginTop: -spacing.xs },
   cellsScroll: { marginHorizontal: -spacing.lg },
   cellsContent: {
     paddingHorizontal: spacing.lg,
