@@ -16,7 +16,10 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen
           name="game"
-          options={{ gestureEnabled: false, headerBackButtonMenuEnabled: false }}
+          options={{
+            gestureEnabled: false,
+            headerBackButtonMenuEnabled: false,
+          }}
         />
         <Stack.Screen
           name="annotate"
