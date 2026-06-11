@@ -37,7 +37,7 @@ export function GameScreen() {
             router.replace("/");
           },
         },
-      ]
+      ],
     );
   }
 
@@ -77,33 +77,27 @@ export function GameScreen() {
 
   const activeParticipant = participants[currentParticipantIdx];
   const currentMemberIdx =
-    format === "teams"
-      ? Math.floor(currentThrowIdx / participants.length)
-      : 0;
+    format === "teams" ? Math.floor(currentThrowIdx / participants.length) : 0;
   const currentMember =
-    format === "teams"
-      ? activeParticipant.members?.[currentMemberIdx]
-      : null;
+    format === "teams" ? activeParticipant.members?.[currentMemberIdx] : null;
 
   function handleAnnotate() {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     router.push("/annotate");
   }
 
-  function handleSettings() {
-    showAbandonAlert();
-  }
-
-  const annotateLabel =
-    currentMember
-      ? `Anotar: ${currentMember.name} · ${activeParticipant.name}`
-      : `Anotar turno de ${activeParticipant.name}`;
+  const annotateLabel = currentMember
+    ? `Anotar: ${currentMember.name} · ${activeParticipant.name}`
+    : `Anotar turno de ${activeParticipant.name}`;
 
   return (
     <SafeAreaView style={styles.safe}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerSideBtn} onPress={showAbandonAlert}>
+        <TouchableOpacity
+          style={styles.headerSideBtn}
+          onPress={showAbandonAlert}
+        >
           <Feather name="arrow-left" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -121,9 +115,7 @@ export function GameScreen() {
             </View>
           )}
         </View>
-        <TouchableOpacity style={styles.headerSideBtn} onPress={handleSettings}>
-          <Feather name="settings" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
+        <View style={styles.headerSideBtn} />
       </View>
 
       {/* Cards */}
@@ -159,9 +151,8 @@ export function GameScreen() {
 
         {mode === "goal" && targetScore != null && (
           <Text style={styles.goalHint}>
-            Le faltan{" "}
-            {Math.max(0, targetScore - totalScore(activeParticipant))} pts a{" "}
-            {currentMember?.name ?? activeParticipant.name} para ganar
+            Le faltan {Math.max(0, targetScore - totalScore(activeParticipant))}{" "}
+            pts a {currentMember?.name ?? activeParticipant.name} para ganar
           </Text>
         )}
       </View>

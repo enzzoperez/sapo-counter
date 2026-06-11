@@ -45,11 +45,11 @@ export function SetupScreen() {
   const [customMembers, setCustomMembers] = useState("");
   const [showCustomMembers, setShowCustomMembers] = useState(false);
 
-  const [players, setPlayers] = useState<PlayerDraft[]>([makePlayer(), makePlayer()]);
-  const [teams, setTeams] = useState<TeamDraft[]>([
-    makeTeam(2),
-    makeTeam(2),
+  const [players, setPlayers] = useState<PlayerDraft[]>([
+    makePlayer(),
+    makePlayer(),
   ]);
+  const [teams, setTeams] = useState<TeamDraft[]>([makeTeam(2), makeTeam(2)]);
 
   const [mode, setMode] = useState<Mode>("turns");
   const [totalTurns, setTotalTurns] = useState(3);
@@ -76,7 +76,7 @@ export function SetupScreen() {
           };
         }
         return { ...team, members: team.members.slice(0, membersPerTeam) };
-      })
+      }),
     );
   }, [membersPerTeam]);
 
@@ -91,10 +91,9 @@ export function SetupScreen() {
   }
 
   function updateTeamName(idx: number, name: string) {
-    setTeams((prev) =>
-      prev.map((t, i) => (i === idx ? { ...t, name } : t))
-    );
+    setTeams((prev) => prev.map((t, i) => (i === idx ? { ...t, name } : t)));
   }
+
   function updateMember(teamIdx: number, memberIdx: number, name: string) {
     setTeams((prev) =>
       prev.map((t, i) =>
@@ -102,11 +101,11 @@ export function SetupScreen() {
           ? {
               ...t,
               members: t.members.map((m, j) =>
-                j === memberIdx ? { ...m, name } : m
+                j === memberIdx ? { ...m, name } : m,
               ),
             }
-          : t
-      )
+          : t,
+      ),
     );
   }
   function addTeam() {
@@ -257,8 +256,7 @@ export function SetupScreen() {
                   style={[
                     styles.teamCard,
                     {
-                      borderLeftColor:
-                        teamColors[ti % teamColors.length],
+                      borderLeftColor: teamColors[ti % teamColors.length],
                     },
                   ]}
                 >
@@ -456,10 +454,7 @@ function ToggleCard({
       activeOpacity={0.7}
     >
       <Text
-        style={[
-          styles.toggleCardLabel,
-          active && styles.toggleCardLabelActive,
-        ]}
+        style={[styles.toggleCardLabel, active && styles.toggleCardLabelActive]}
       >
         {label}
       </Text>
