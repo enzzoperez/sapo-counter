@@ -25,21 +25,17 @@ export function GameScreen() {
   const pushedToFinal = useRef(false);
 
   function showAbandonAlert() {
-    Alert.alert(
-      "¿Salir de la partida?",
-      "Vas a perder el progreso actual.",
-      [
-        { text: "Seguir jugando", style: "cancel" },
-        {
-          text: "Salir",
-          style: "destructive",
-          onPress: () => {
-            dispatch({ type: "NEW_GAME" });
-            router.replace("/");
-          },
+    Alert.alert("¿Salir de la partida?", "Vas a perder el progreso actual.", [
+      { text: "Seguir jugando", style: "cancel" },
+      {
+        text: "Salir",
+        style: "destructive",
+        onPress: () => {
+          dispatch({ type: "NEW_GAME" });
+          router.replace("/");
         },
-      ],
-    );
+      },
+    ]);
   }
 
   useEffect(() => {
@@ -91,10 +87,13 @@ export function GameScreen() {
     : `Anotar turno de ${activeParticipant.name}`;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerSideBtn} onPress={showAbandonAlert}>
+        <TouchableOpacity
+          style={styles.headerSideBtn}
+          onPress={showAbandonAlert}
+        >
           <Feather name="arrow-left" size={22} color={colors.textSecondary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -131,11 +130,7 @@ export function GameScreen() {
             key={p.id}
             participant={p}
             isActive={i === currentParticipantIdx}
-            activeMemberIdx={
-              i === currentParticipantIdx && format === "teams"
-                ? currentMemberIdx
-                : undefined
-            }
+            pendingScores={state.pendingTeamScores[p.id]}
             onAnnotate={handleAnnotate}
             mode={mode}
             target={targetScore}

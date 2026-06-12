@@ -12,6 +12,8 @@ type Props = {
   memberBreakdown?: string;
   onPress?: () => void;
   accentColor?: string;
+  /** Dim the score (used for previous turns under the active team breakdown). */
+  muted?: boolean;
 };
 
 export function TurnCell({
@@ -21,6 +23,7 @@ export function TurnCell({
   memberBreakdown,
   onPress,
   accentColor = colors.accent,
+  muted = false,
 }: Props) {
   const label = `T${index + 1}`;
 
@@ -51,7 +54,7 @@ export function TurnCell({
   return (
     <View style={styles.completed}>
       <Text style={styles.microLabel}>{label}</Text>
-      <Text style={styles.scoreText}>{val}</Text>
+      <Text style={[styles.scoreText, muted && styles.scoreTextMuted]}>{val}</Text>
       {memberBreakdown ? (
         <Text style={styles.breakdown}>{memberBreakdown}</Text>
       ) : null}
@@ -98,6 +101,7 @@ const styles = StyleSheet.create({
   dash: { ...typography.body, color: colors.textDisabled },
   annotateText: { ...typography.captionMedium, color: colors.accentDark },
   scoreText: { ...typography.scoreSmall, color: colors.textSecondary },
+  scoreTextMuted: { color: colors.textMuted },
   breakdown: {
     ...typography.micro,
     color: colors.textDisabled,

@@ -1,15 +1,17 @@
 import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { colors, spacing, radius, typography } from "@/theme/theme";
 import { Avatar } from "@/components/shared/avatar";
 import { TurnCell } from "./turn-cell";
 import { ProgressBar } from "./progress-bar";
 import { totalScore } from "@/helpers";
-import type { Participant, Mode, TurnScore } from "@/types";
+import type { Participant, Player, Mode, TurnScore } from "@/types";
 
 type Props = {
   participant: Participant;
   isActive: boolean;
-  activeMemberIdx?: number;
+  /** In-progress member scores for this team's current turn (member index order). */
+  pendingScores?: number[];
   onAnnotate: () => void;
   mode: Mode;
   target?: number;
@@ -32,23 +34,58 @@ function memberBreakdownForTurn(turn: TurnScore): string {
   return turn.join(" + ");
 }
 
-function memberAccumulatedBreakdown(participant: Participant): string {
-  if (!participant.members) return "";
-  return participant.members
-    .map((m, mi) => {
-      const total = participant.turns.reduce<number>(
-        (sum, t) => (Array.isArray(t) ? sum + (t[mi] ?? 0) : sum),
-        0,
-      );
-      return `${m.name} ${total}`;
-    })
-    .join(" · ");
+/** Expanded breakdown of the active team's in-progress turn. */
+function TeamTurnBreakdown({
+  members,
+  pendingScores,
+  turnIdx,
+}: {
+  members: Player[];
+  pendingScores: number[];
+  turnIdx: number;
+}) {
+  const subtotal = pendingScores.reduce((a, b) => a + b, 0);
+  return (
+    <View style={styles.breakdown}>
+      <View style={styles.breakdownHeader}>
+        <Text style={styles.breakdownTurn}>TURNO {turnIdx + 1}</Text>
+        <Text style={styles.breakdownSubtotal}>{subtotal} pts</Text>
+      </View>
+      {members.map((m, i) => {
+        const didThrow = i < pendingScores.length;
+        return (
+          <View
+            key={m.id}
+            style={[styles.memberRow, i > 0 && styles.memberRowBorder]}
+          >
+            <View style={styles.memberLeft}>
+              <Feather
+                name={didThrow ? "check" : "clock"}
+                size={13}
+                color={didThrow ? colors.accent : colors.gold}
+              />
+              <Text
+                style={didThrow ? styles.memberNameDone : styles.memberNamePending}
+              >
+                {m.name}
+              </Text>
+            </View>
+            {didThrow ? (
+              <Text style={styles.memberScore}>{pendingScores[i]}</Text>
+            ) : (
+              <Text style={styles.memberPendingLabel}>pendiente</Text>
+            )}
+          </View>
+        );
+      })}
+    </View>
+  );
 }
 
 export function ParticipantCard({
   participant,
   isActive,
-  activeMemberIdx,
+  pendingScores,
   onAnnotate,
   mode,
   target,
@@ -57,6 +94,8 @@ export function ParticipantCard({
 }: Props) {
   const score = totalScore(participant);
   const accentColor = participant.color ?? colors.accent;
+  const isTeam = !!participant.members;
+  const showTeamBreakdown = isActive && isTeam;
 
   const cellCount =
     mode === "turns"
@@ -75,13 +114,12 @@ export function ParticipantCard({
           />
           <View style={styles.nameBlock}>
             <Text style={styles.name}>{participant.name}</Text>
-            {isActive && (
-              <Text style={styles.activeBadge}>
-                {activeMemberIdx !== undefined && participant.members
-                  ? `▶ Tirando: ${participant.members[activeMemberIdx]?.name ?? ""}`
-                  : "▶ Tirando ahora"}
-              </Text>
-            )}
+            {isActive &&
+              (isTeam ? (
+                <Text style={styles.teamTurnBadge}>Turno en curso</Text>
+              ) : (
+                <Text style={styles.activeBadge}>▶ Tirando ahora</Text>
+              ))}
           </View>
         </View>
         <View style={styles.scoreBlock}>
@@ -95,47 +133,67 @@ export function ParticipantCard({
         </View>
       </View>
 
-      {/* Team member breakdown */}
-      {participant.members && participant.turns.length > 0 && (
-        <View style={styles.memberPill}>
-          <Text style={styles.memberPillText}>
-            {memberAccumulatedBreakdown(participant)}
-          </Text>
-        </View>
-      )}
-
       {/* Progress bar (goal mode) */}
       {mode === "goal" && target != null && (
         <ProgressBar value={score} max={target} color={accentColor} />
       )}
 
-      {/* Turn cells */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.cellsScroll}
-        contentContainerStyle={styles.cellsContent}
-      >
-        {Array.from({ length: cellCount }, (_, i) => {
-          const cs = getCellState(i, participant, isActive);
-          const turn = participant.turns[i];
-          const breakdown =
-            participant.members && turn !== undefined
-              ? memberBreakdownForTurn(turn)
-              : undefined;
-          return (
-            <TurnCell
-              key={i}
-              index={i}
-              cellState={cs}
-              score={turn}
-              memberBreakdown={breakdown}
-              onPress={cs === "current" ? onAnnotate : undefined}
-              accentColor={accentColor}
-            />
-          );
-        })}
-      </ScrollView>
+      {showTeamBreakdown ? (
+        <>
+          <TeamTurnBreakdown
+            members={participant.members!}
+            pendingScores={pendingScores ?? []}
+            turnIdx={currentTurnIdx}
+          />
+          {/* Previous turns (muted, total only) */}
+          {participant.turns.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.cellsScroll}
+              contentContainerStyle={styles.cellsContent}
+            >
+              {participant.turns.map((t, i) => (
+                <TurnCell
+                  key={i}
+                  index={i}
+                  cellState="completed"
+                  score={t}
+                  muted
+                />
+              ))}
+            </ScrollView>
+          )}
+        </>
+      ) : (
+        /* Normal cell row (individual + inactive teams) */
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.cellsScroll}
+          contentContainerStyle={styles.cellsContent}
+        >
+          {Array.from({ length: cellCount }, (_, i) => {
+            const cs = getCellState(i, participant, isActive);
+            const turn = participant.turns[i];
+            const breakdown =
+              participant.members && turn !== undefined
+                ? memberBreakdownForTurn(turn)
+                : undefined;
+            return (
+              <TurnCell
+                key={i}
+                index={i}
+                cellState={cs}
+                score={turn}
+                memberBreakdown={breakdown}
+                onPress={cs === "current" ? onAnnotate : undefined}
+                accentColor={accentColor}
+              />
+            );
+          })}
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -172,6 +230,7 @@ const styles = StyleSheet.create({
   nameBlock: { gap: 2 },
   name: { ...typography.itemName, color: colors.textPrimary },
   activeBadge: { ...typography.micro, color: colors.accent, letterSpacing: 0 },
+  teamTurnBadge: { ...typography.captionMedium, color: colors.accent },
   scoreBlock: { alignItems: "flex-end" },
   score: {
     ...typography.score,
@@ -179,14 +238,46 @@ const styles = StyleSheet.create({
     fontVariant: ["tabular-nums"],
   },
   scoreTarget: { ...typography.caption, color: colors.textMuted },
-  memberPill: {
-    alignSelf: "flex-start",
+  // Active team turn breakdown
+  breakdown: {
     backgroundColor: colors.bg,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
+    borderRadius: 12,
+    padding: spacing.sm + 2,
   },
-  memberPillText: { ...typography.caption, color: colors.textSecondary },
+  breakdownHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingBottom: spacing.xs,
+  },
+  breakdownTurn: { ...typography.micro, color: colors.textTertiary },
+  breakdownSubtotal: { ...typography.captionMedium, color: colors.accent },
+  memberRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.sm,
+  },
+  memberRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  memberLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  memberNameDone: { ...typography.caption, color: colors.textSecondary },
+  memberNamePending: {
+    ...typography.caption,
+    fontWeight: "500",
+    color: colors.gold,
+  },
+  memberScore: {
+    ...typography.subtitle,
+    fontWeight: "600",
+    color: colors.textPrimary,
+    fontVariant: ["tabular-nums"],
+  },
+  memberPendingLabel: { ...typography.caption, color: colors.textDisabled },
   cellsScroll: { marginHorizontal: -spacing.lg },
   cellsContent: {
     paddingHorizontal: spacing.lg,
