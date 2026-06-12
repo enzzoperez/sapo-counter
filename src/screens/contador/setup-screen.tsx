@@ -152,7 +152,7 @@ export function SetupScreen() {
     format === "individual" ? players.length >= 2 : teams.length >= 2;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -421,12 +421,16 @@ export function SetupScreen() {
             </Section>
           )}
 
+        </ScrollView>
+
+        {/* Fixed bottom action */}
+        <View style={styles.bottom}>
           <PrimaryButton
             label="Empezar partida"
             onPress={handleStart}
             disabled={!canStart}
           />
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -476,8 +480,14 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: {
     padding: spacing.lg,
-    paddingBottom: spacing.xxl * 2,
+    paddingBottom: spacing.xl,
     gap: spacing.xxl,
+  },
+  bottom: {
+    padding: spacing.lg,
+    borderTopWidth: 0.5,
+    borderTopColor: colors.border,
+    backgroundColor: colors.bg,
   },
   headerBlock: { alignItems: "center", gap: spacing.xs },
   headerIcon: {

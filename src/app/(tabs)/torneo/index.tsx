@@ -5,7 +5,7 @@ import { colors, spacing, radius, typography } from "@/theme/theme";
 
 export default function TorneoIndex() {
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <View style={styles.center}>
         <View style={styles.iconBox}>
           <MaterialCommunityIcons name="trophy" size={28} color={colors.gold} />

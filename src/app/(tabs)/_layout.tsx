@@ -35,7 +35,11 @@ export default function TabsLayout() {
         options={{
           title: "Torneo",
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="tournament" size={size} color={color} />
+            <MaterialCommunityIcons
+              name="tournament"
+              size={size}
+              color={color}
+            />
           ),
         }}
       />

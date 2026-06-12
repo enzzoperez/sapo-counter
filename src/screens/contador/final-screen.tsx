@@ -53,7 +53,7 @@ export function FinalScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       {/* Winner header */}
       <View style={styles.winnerHeader}>
         <View style={styles.trophyBox}>
