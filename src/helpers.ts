@@ -6,7 +6,7 @@ export function turnScore(t: TurnScore): number {
 }
 
 export function totalScore(p: Participant): number {
-  return p.turns.reduce((sum, t) => sum + turnScore(t), 0);
+  return p.turns.reduce<number>((sum, t) => sum + turnScore(t), 0);
 }
 
 export function isFinished(state: GameState): boolean {

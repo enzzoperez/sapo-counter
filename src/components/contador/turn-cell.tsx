@@ -1,7 +1,7 @@
 import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
 import { colors, spacing, radius, typography } from "@/theme/theme";
-import { turnScore } from "../helpers";
-import type { TurnScore } from "../types";
+import { turnScore } from "@/helpers";
+import type { TurnScore } from "@/types";
 
 type CellState = "completed" | "current" | "future";
 
@@ -12,6 +12,8 @@ type Props = {
   memberBreakdown?: string;
   onPress?: () => void;
   accentColor?: string;
+  /** Dim the score (used for previous turns under the active team breakdown). */
+  muted?: boolean;
 };
 
 export function TurnCell({
@@ -21,13 +23,14 @@ export function TurnCell({
   memberBreakdown,
   onPress,
   accentColor = colors.accent,
+  muted = false,
 }: Props) {
   const label = `T${index + 1}`;
 
   if (cellState === "future") {
     return (
       <View style={styles.future}>
-        <Text style={styles.microLabel}>{label}</Text>
+        <Text style={styles.microDisabled}>{label}</Text>
         <Text style={styles.dash}>—</Text>
       </View>
     );
@@ -41,7 +44,7 @@ export function TurnCell({
         activeOpacity={0.8}
         disabled={!onPress}
       >
-        <Text style={styles.microLabelCurrent}>{label}</Text>
+        <Text style={styles.microCurrent}>{label}</Text>
         <Text style={styles.annotateText}>+ Anotar</Text>
       </TouchableOpacity>
     );
@@ -51,64 +54,57 @@ export function TurnCell({
   return (
     <View style={styles.completed}>
       <Text style={styles.microLabel}>{label}</Text>
-      <Text style={styles.scoreText}>{val}</Text>
-      {memberBreakdown && (
+      <Text style={[styles.scoreText, muted && styles.scoreTextMuted]}>{val}</Text>
+      {memberBreakdown ? (
         <Text style={styles.breakdown}>{memberBreakdown}</Text>
-      )}
+      ) : null}
     </View>
   );
 }
 
 const CELL_WIDTH = 64;
+const CELL_HEIGHT = 64;
 
 const styles = StyleSheet.create({
   future: {
     width: CELL_WIDTH,
-    height: 64,
-    borderRadius: radius.md,
+    height: CELL_HEIGHT,
+    borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderSubtle,
     borderStyle: "dashed",
-    backgroundColor: colors.bgPrimary,
+    backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.xs,
   },
   current: {
     width: CELL_WIDTH,
-    height: 64,
-    borderRadius: radius.md,
+    height: CELL_HEIGHT,
+    borderRadius: radius.sm,
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.xs,
   },
   completed: {
     width: CELL_WIDTH,
-    height: 64,
-    borderRadius: radius.md,
-    backgroundColor: colors.bgSecondary,
+    height: CELL_HEIGHT,
+    borderRadius: radius.sm,
+    backgroundColor: colors.bg,
     alignItems: "center",
     justifyContent: "center",
     gap: 2,
   },
-  microLabel: {
-    ...typography.micro,
-    color: colors.textTertiary,
-  },
-  microLabelCurrent: {
-    ...typography.micro,
-    color: colors.bgPrimary,
-    opacity: 0.8,
-  },
-  dash: { ...typography.body, color: colors.textTertiary },
-  annotateText: {
-    ...typography.captionMedium,
-    color: colors.bgPrimary,
-  },
-  scoreText: { ...typography.scoreSmall, color: colors.textPrimary },
+  microLabel: { ...typography.micro, color: colors.textMuted },
+  microDisabled: { ...typography.micro, color: colors.textDisabled },
+  microCurrent: { ...typography.micro, color: colors.accentDark, opacity: 0.85 },
+  dash: { ...typography.body, color: colors.textDisabled },
+  annotateText: { ...typography.captionMedium, color: colors.accentDark },
+  scoreText: { ...typography.scoreSmall, color: colors.textSecondary },
+  scoreTextMuted: { color: colors.textMuted },
   breakdown: {
     ...typography.micro,
-    color: colors.textTertiary,
+    color: colors.textDisabled,
     textAlign: "center",
   },
 });

@@ -1,15 +1,12 @@
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
+import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect } from "react";
 import { useRouter } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { colors, spacing, radius, typography } from "@/theme/theme";
+import { Avatar } from "@/components/shared/avatar";
+import { PrimaryButton } from "@/components/shared/primary-button";
+import { SecondaryButton } from "@/components/shared/secondary-button";
 import { useGame } from "@/state/game-context";
 import { totalScore, turnScore, getWinner } from "@/helpers";
 import type { Participant } from "@/types";
@@ -56,10 +53,16 @@ export function FinalScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       {/* Winner header */}
       <View style={styles.winnerHeader}>
-        <Feather name="award" size={48} color={colors.warning} />
+        <View style={styles.trophyBox}>
+          <MaterialCommunityIcons
+            name="trophy"
+            size={36}
+            color={colors.gold}
+          />
+        </View>
         <Text style={styles.winnerMicro}>
           {isMultiWinner ? "EMPATE" : "GANADOR"}
         </Text>
@@ -94,48 +97,36 @@ export function FinalScreen() {
             >
               <View style={styles.rankCardHeader}>
                 <View style={styles.rankLeft}>
-                  <View
-                    style={[
-                      styles.rankAvatar,
-                      {
-                        backgroundColor: isFirst
-                          ? colors.warningBg
-                          : colors.bgSecondary,
-                      },
-                      p.color && { backgroundColor: p.color + "33" },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.rankAvatarText,
-                        {
-                          color: isFirst
-                            ? colors.warningText
-                            : colors.textSecondary,
-                        },
-                        p.color && { color: p.color },
-                      ]}
-                    >
-                      {p.name.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
+                  {isFirst && !p.color ? (
+                    <View style={styles.goldAvatar}>
+                      <Text style={styles.goldAvatarText}>
+                        {p.name.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Avatar name={p.name} color={p.color} />
+                  )}
                   <View>
                     <Text
                       style={[
                         styles.rankName,
-                        isFirst && { color: colors.warningText },
+                        isFirst && { color: colors.gold },
                       ]}
                     >
                       {p.name}
                     </Text>
-                    <Text style={styles.rankPosition}>{rank}°</Text>
+                    <Text
+                      style={[
+                        styles.rankPosition,
+                        isFirst && { color: colors.gold },
+                      ]}
+                    >
+                      {rank}° puesto
+                    </Text>
                   </View>
                 </View>
                 <Text
-                  style={[
-                    styles.rankScore,
-                    isFirst && { color: colors.warningText },
-                  ]}
+                  style={[styles.rankScore, isFirst && { color: colors.gold }]}
                 >
                   {totalScore(p)}
                 </Text>
@@ -148,19 +139,9 @@ export function FinalScreen() {
                 contentContainerStyle={styles.turnPills}
               >
                 {p.turns.map((t, i) => (
-                  <View
-                    key={i}
-                    style={[styles.turnPill, isFirst && styles.turnPillFirst]}
-                  >
+                  <View key={i} style={styles.turnPill}>
                     <Text style={styles.turnPillLabel}>T{i + 1}</Text>
-                    <Text
-                      style={[
-                        styles.turnPillScore,
-                        isFirst && { color: colors.warningText },
-                      ]}
-                    >
-                      {turnScore(t)}
-                    </Text>
+                    <Text style={styles.turnPillScore}>{turnScore(t)}</Text>
                   </View>
                 ))}
               </ScrollView>
@@ -171,14 +152,18 @@ export function FinalScreen() {
 
       {/* Buttons */}
       <View style={styles.buttons}>
-        <TouchableOpacity style={styles.rematchBtn} onPress={handleRematch}>
-          <Feather name="refresh-cw" size={16} color={colors.accent} />
-          <Text style={styles.rematchText}>Revancha</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.newGameBtn} onPress={handleNewGame}>
-          <Feather name="home" size={16} color={colors.bgPrimary} />
-          <Text style={styles.newGameText}>Nueva partida</Text>
-        </TouchableOpacity>
+        <SecondaryButton
+          label="Revancha"
+          onPress={handleRematch}
+          style={styles.btnFlex}
+          icon={<Feather name="refresh-cw" size={16} color={colors.textPrimary} />}
+        />
+        <PrimaryButton
+          label="Nueva partida"
+          onPress={handleNewGame}
+          style={styles.btnFlex}
+          icon={<Feather name="home" size={16} color={colors.accentDark} />}
+        />
       </View>
     </SafeAreaView>
   );
@@ -193,8 +178,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     gap: spacing.sm,
   },
+  trophyBox: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: colors.goldBg,
+    borderWidth: 1,
+    borderColor: colors.goldBorder,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.sm,
+  },
   winnerMicro: { ...typography.micro, color: colors.textTertiary },
-  winnerName: { ...typography.title, color: colors.textPrimary },
+  winnerName: { ...typography.heading, color: colors.textPrimary },
   winnerSubtitle: { ...typography.caption, color: colors.textTertiary },
   rankingContent: {
     padding: spacing.lg,
@@ -207,15 +203,14 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   rankCardFirst: {
-    backgroundColor: colors.warningBg,
-    borderWidth: 2,
-    borderColor: colors.warning,
+    backgroundColor: colors.goldBg,
+    borderWidth: 1,
+    borderColor: colors.gold,
   },
   rankCardRest: {
-    backgroundColor: colors.bgPrimary,
+    backgroundColor: colors.bgElevated,
     borderWidth: 0.5,
     borderColor: colors.border,
-    opacity: 0.85,
   },
   rankCardHeader: {
     flexDirection: "row",
@@ -223,29 +218,33 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   rankLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  rankAvatar: {
+  goldAvatar: {
     width: 36,
     height: 36,
     borderRadius: 18,
+    backgroundColor: colors.goldBg,
     alignItems: "center",
     justifyContent: "center",
   },
-  rankAvatarText: { ...typography.captionMedium },
-  rankName: { ...typography.bodyMedium, color: colors.textPrimary },
+  goldAvatarText: { ...typography.subtitle, fontWeight: "600", color: colors.gold },
+  rankName: { ...typography.itemName, color: colors.textPrimary },
   rankPosition: { ...typography.caption, color: colors.textTertiary },
-  rankScore: { ...typography.score, color: colors.textPrimary },
+  rankScore: {
+    ...typography.score,
+    color: colors.textPrimary,
+    fontVariant: ["tabular-nums"],
+  },
   turnPills: { flexDirection: "row", gap: spacing.sm },
   turnPill: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.sm,
-    backgroundColor: colors.bgSecondary,
+    backgroundColor: colors.bg,
     alignItems: "center",
     gap: 2,
   },
-  turnPillFirst: { backgroundColor: colors.warning + "22" },
   turnPillLabel: { ...typography.micro, color: colors.textTertiary },
-  turnPillScore: { ...typography.captionMedium, color: colors.textPrimary },
+  turnPillScore: { ...typography.scoreSmall, color: colors.textPrimary },
   buttons: {
     flexDirection: "row",
     padding: spacing.lg,
@@ -254,28 +253,5 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     backgroundColor: colors.bg,
   },
-  rematchBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.accent,
-    backgroundColor: colors.bgPrimary,
-  },
-  rematchText: { ...typography.bodyMedium, color: colors.accent },
-  newGameBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.lg,
-    borderRadius: radius.lg,
-    backgroundColor: colors.accent,
-  },
-  newGameText: { ...typography.bodyMedium, color: colors.bgPrimary },
+  btnFlex: { flex: 1 },
 });

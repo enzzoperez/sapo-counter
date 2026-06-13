@@ -11,9 +11,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef } from "react";
 import { useRouter } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { colors, spacing, typography } from "@/theme/theme";
-import { ParticipantCard } from "@/components/participant-card";
+import { ParticipantCard } from "@/components/contador/participant-card";
+import { PrimaryButton } from "@/components/shared/primary-button";
 import { useGame } from "@/state/game-context";
 import { totalScore } from "@/helpers";
 
@@ -24,21 +25,17 @@ export function GameScreen() {
   const pushedToFinal = useRef(false);
 
   function showAbandonAlert() {
-    Alert.alert(
-      "Abandonar partida",
-      "¿Seguro que querés salir? Se va a perder el progreso.",
-      [
-        { text: "Quedarse", style: "cancel" },
-        {
-          text: "Abandonar",
-          style: "destructive",
-          onPress: () => {
-            dispatch({ type: "NEW_GAME" });
-            router.replace("/");
-          },
+    Alert.alert("¿Salir de la partida?", "Vas a perder el progreso actual.", [
+      { text: "Seguir jugando", style: "cancel" },
+      {
+        text: "Salir",
+        style: "destructive",
+        onPress: () => {
+          dispatch({ type: "NEW_GAME" });
+          router.replace("/");
         },
-      ],
-    );
+      },
+    ]);
   }
 
   useEffect(() => {
@@ -72,7 +69,6 @@ export function GameScreen() {
     mode,
     totalTurns,
     targetScore,
-    membersPerTeam,
   } = state;
 
   const activeParticipant = participants[currentParticipantIdx];
@@ -91,26 +87,31 @@ export function GameScreen() {
     : `Anotar turno de ${activeParticipant.name}`;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerSideBtn}
           onPress={showAbandonAlert}
         >
-          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
+          <Feather name="arrow-left" size={22} color={colors.textSecondary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           {mode === "turns" ? (
             <View style={styles.headerInfo}>
               <Text style={styles.micro}>TURNO</Text>
               <Text style={styles.headerValue}>
-                {currentTurnIdx + 1} / {totalTurns}
+                {currentTurnIdx + 1}{" "}
+                <Text style={styles.headerValueMuted}>/ {totalTurns}</Text>
               </Text>
             </View>
           ) : (
             <View style={styles.headerInfo}>
-              <Feather name="flag" size={14} color={colors.textSecondary} />
+              <MaterialCommunityIcons
+                name="flag"
+                size={14}
+                color={colors.textTertiary}
+              />
               <Text style={styles.headerValue}>META {targetScore} pts</Text>
             </View>
           )}
@@ -129,11 +130,7 @@ export function GameScreen() {
             key={p.id}
             participant={p}
             isActive={i === currentParticipantIdx}
-            activeMemberIdx={
-              i === currentParticipantIdx && format === "teams"
-                ? currentMemberIdx
-                : undefined
-            }
+            pendingScores={state.pendingTeamScores[p.id]}
             onAnnotate={handleAnnotate}
             mode={mode}
             target={targetScore}
@@ -145,10 +142,7 @@ export function GameScreen() {
 
       {/* Bottom action */}
       <View style={styles.bottom}>
-        <TouchableOpacity style={styles.annotateBtn} onPress={handleAnnotate}>
-          <Text style={styles.annotateBtnText}>{annotateLabel}</Text>
-        </TouchableOpacity>
-
+        <PrimaryButton label={annotateLabel} onPress={handleAnnotate} />
         {mode === "goal" && targetScore != null && (
           <Text style={styles.goalHint}>
             Le faltan {Math.max(0, targetScore - totalScore(activeParticipant))}{" "}
@@ -172,13 +166,14 @@ const styles = StyleSheet.create({
   },
   headerSideBtn: { width: 40, alignItems: "center" },
   headerCenter: { flex: 1, alignItems: "center" },
-  headerInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
+  headerInfo: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   micro: { ...typography.micro, color: colors.textTertiary },
-  headerValue: { ...typography.bodyMedium, color: colors.textPrimary },
+  headerValue: {
+    ...typography.title,
+    color: colors.textPrimary,
+    fontVariant: ["tabular-nums"],
+  },
+  headerValueMuted: { color: colors.textMuted },
   cards: {
     padding: spacing.lg,
     gap: spacing.md,
@@ -191,13 +186,6 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     backgroundColor: colors.bg,
   },
-  annotateBtn: {
-    backgroundColor: colors.accent,
-    borderRadius: 12,
-    paddingVertical: spacing.lg,
-    alignItems: "center",
-  },
-  annotateBtnText: { ...typography.bodyMedium, color: colors.bgPrimary },
   goalHint: {
     ...typography.caption,
     color: colors.textTertiary,

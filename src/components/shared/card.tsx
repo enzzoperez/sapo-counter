@@ -9,7 +9,7 @@ export function Card({ children, style }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.bgPrimary,
+    backgroundColor: colors.bgElevated,
     borderRadius: radius.lg,
     padding: spacing.lg,
     borderWidth: 0.5,

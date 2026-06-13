@@ -11,9 +11,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { colors, spacing, radius, typography, teamColors } from "@/theme/theme";
-import { Pill } from "@/components/pill";
+import { Pill } from "@/components/shared/pill";
+import { PrimaryButton } from "@/components/shared/primary-button";
 import { useGame } from "@/state/game-context";
 import { genId } from "@/helpers";
 import type { Format, Mode, Participant } from "@/types";
@@ -93,7 +94,6 @@ export function SetupScreen() {
   function updateTeamName(idx: number, name: string) {
     setTeams((prev) => prev.map((t, i) => (i === idx ? { ...t, name } : t)));
   }
-
   function updateMember(teamIdx: number, memberIdx: number, name: string) {
     setTeams((prev) =>
       prev.map((t, i) =>
@@ -152,7 +152,7 @@ export function SetupScreen() {
     format === "individual" ? players.length >= 2 : teams.length >= 2;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -161,8 +161,20 @@ export function SetupScreen() {
           style={styles.flex}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.title}>Nueva partida</Text>
+          {/* Header */}
+          <View style={styles.headerBlock}>
+            <View style={styles.headerIcon}>
+              <MaterialCommunityIcons
+                name="target"
+                size={26}
+                color={colors.accent}
+              />
+            </View>
+            <Text style={styles.headerTitle}>Sapo Contador</Text>
+            <Text style={styles.headerSubtitle}>Nueva partida</Text>
+          </View>
 
           {/* Format toggle */}
           <Section label="Formato">
@@ -212,7 +224,7 @@ export function SetupScreen() {
                   }}
                   keyboardType="number-pad"
                   placeholder="Ej: 5"
-                  placeholderTextColor={colors.textTertiary}
+                  placeholderTextColor={colors.textMuted}
                   autoFocus
                 />
               )}
@@ -222,27 +234,32 @@ export function SetupScreen() {
           {/* Players or Teams */}
           {format === "individual" ? (
             <Section label="Jugadores">
-              {players.map((p, i) => (
-                <View key={p.id} style={styles.playerRow}>
-                  <View style={styles.avatarSmall}>
-                    <Text style={styles.avatarSmallText}>
-                      {p.name.charAt(0).toUpperCase() || String(i + 1)}
-                    </Text>
+              <View style={styles.listCard}>
+                {players.map((p, i) => (
+                  <View
+                    key={p.id}
+                    style={[styles.playerRow, i > 0 && styles.playerRowBorder]}
+                  >
+                    <View style={styles.avatarSmall}>
+                      <Text style={styles.avatarSmallText}>
+                        {p.name.charAt(0).toUpperCase() || String(i + 1)}
+                      </Text>
+                    </View>
+                    <TextInput
+                      style={styles.nameInput}
+                      value={p.name}
+                      onChangeText={(v) => updatePlayer(i, v)}
+                      placeholder={`Jugador ${i + 1}`}
+                      placeholderTextColor={colors.textMuted}
+                    />
+                    {players.length > 2 && (
+                      <TouchableOpacity onPress={() => removePlayer(i)}>
+                        <Feather name="x" size={18} color={colors.textMuted} />
+                      </TouchableOpacity>
+                    )}
                   </View>
-                  <TextInput
-                    style={styles.nameInput}
-                    value={p.name}
-                    onChangeText={(v) => updatePlayer(i, v)}
-                    placeholder={`Jugador ${i + 1}`}
-                    placeholderTextColor={colors.textTertiary}
-                  />
-                  {players.length > 2 && (
-                    <TouchableOpacity onPress={() => removePlayer(i)}>
-                      <Feather name="x" size={18} color={colors.textTertiary} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              ))}
+                ))}
+              </View>
               <TouchableOpacity style={styles.addBtn} onPress={addPlayer}>
                 <Feather name="plus" size={16} color={colors.accent} />
                 <Text style={styles.addBtnText}>Agregar jugador</Text>
@@ -255,9 +272,7 @@ export function SetupScreen() {
                   key={team.id}
                   style={[
                     styles.teamCard,
-                    {
-                      borderLeftColor: teamColors[ti % teamColors.length],
-                    },
+                    { borderLeftColor: teamColors[ti % teamColors.length] },
                   ]}
                 >
                   <View style={styles.teamHeader}>
@@ -266,15 +281,11 @@ export function SetupScreen() {
                       value={team.name}
                       onChangeText={(v) => updateTeamName(ti, v)}
                       placeholder={`Equipo ${ti + 1}`}
-                      placeholderTextColor={colors.textTertiary}
+                      placeholderTextColor={colors.textMuted}
                     />
                     {teams.length > 2 && (
                       <TouchableOpacity onPress={() => removeTeam(ti)}>
-                        <Feather
-                          name="x"
-                          size={18}
-                          color={colors.textTertiary}
-                        />
+                        <Feather name="x" size={18} color={colors.textMuted} />
                       </TouchableOpacity>
                     )}
                   </View>
@@ -303,13 +314,13 @@ export function SetupScreen() {
                         value={m.name}
                         onChangeText={(v) => updateMember(ti, mi, v)}
                         placeholder={`Jugador ${mi + 1}`}
-                        placeholderTextColor={colors.textTertiary}
+                        placeholderTextColor={colors.textMuted}
                       />
                     </View>
                   ))}
                 </View>
               ))}
-              <TouchableOpacity style={styles.addBtn} onPress={addTeam}>
+              <TouchableOpacity style={styles.addBtnDashed} onPress={addTeam}>
                 <Feather name="plus" size={16} color={colors.accent} />
                 <Text style={styles.addBtnText}>Agregar equipo</Text>
               </TouchableOpacity>
@@ -364,7 +375,7 @@ export function SetupScreen() {
                   }}
                   keyboardType="number-pad"
                   placeholder="Ej: 8"
-                  placeholderTextColor={colors.textTertiary}
+                  placeholderTextColor={colors.textMuted}
                   autoFocus
                 />
               )}
@@ -403,21 +414,23 @@ export function SetupScreen() {
                   }}
                   keyboardType="number-pad"
                   placeholder="Ej: 750"
-                  placeholderTextColor={colors.textTertiary}
+                  placeholderTextColor={colors.textMuted}
                   autoFocus
                 />
               )}
             </Section>
           )}
 
-          <TouchableOpacity
-            style={[styles.startBtn, !canStart && styles.startBtnDisabled]}
+        </ScrollView>
+
+        {/* Fixed bottom action */}
+        <View style={styles.bottom}>
+          <PrimaryButton
+            label="Empezar partida"
             onPress={handleStart}
             disabled={!canStart}
-          >
-            <Text style={styles.startBtnText}>Empezar partida</Text>
-          </TouchableOpacity>
-        </ScrollView>
+          />
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -467,10 +480,29 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: {
     padding: spacing.lg,
-    paddingBottom: spacing.xxl * 2,
+    paddingBottom: spacing.xl,
     gap: spacing.xxl,
   },
-  title: { ...typography.title, color: colors.textPrimary },
+  bottom: {
+    padding: spacing.lg,
+    borderTopWidth: 0.5,
+    borderTopColor: colors.border,
+    backgroundColor: colors.bg,
+  },
+  headerBlock: { alignItems: "center", gap: spacing.xs },
+  headerIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.lg,
+    backgroundColor: colors.accentBg,
+    borderWidth: 1,
+    borderColor: colors.accentBorder,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.xs,
+  },
+  headerTitle: { ...typography.heading, color: colors.textPrimary },
+  headerSubtitle: { ...typography.caption, color: colors.textTertiary },
   section: { gap: spacing.md },
   sectionLabel: { ...typography.micro, color: colors.textTertiary },
   pillRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
@@ -481,38 +513,45 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.bgPrimary,
+    backgroundColor: colors.bgElevated,
     alignItems: "center",
   },
   toggleCardActive: {
-    borderColor: colors.accent,
+    borderColor: colors.accentBorder,
     backgroundColor: colors.accentBg,
   },
   toggleCardLabel: { ...typography.bodyMedium, color: colors.textSecondary },
-  toggleCardLabelActive: { color: colors.accentText },
-  playerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  avatarSmall: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.accentBg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarSmallText: { ...typography.captionMedium, color: colors.accentText },
-  nameInput: {
-    flex: 1,
-    height: 44,
-    backgroundColor: colors.bgPrimary,
+  toggleCardLabelActive: { color: colors.accent },
+  listCard: {
+    backgroundColor: colors.bgElevated,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: spacing.md,
-    ...typography.body,
+  },
+  playerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  playerRowBorder: {
+    borderTopWidth: 0.5,
+    borderTopColor: colors.border,
+  },
+  avatarSmall: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: colors.accentBg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarSmallText: { ...typography.captionMedium, color: colors.accent },
+  nameInput: {
+    flex: 1,
+    height: 40,
+    ...typography.itemName,
     color: colors.textPrimary,
   },
   addBtn: {
@@ -521,9 +560,20 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingVertical: spacing.sm,
   },
+  addBtnDashed: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.borderSubtle,
+  },
   addBtnText: { ...typography.bodyMedium, color: colors.accent },
   teamCard: {
-    backgroundColor: colors.bgPrimary,
+    backgroundColor: colors.bgElevated,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
@@ -538,20 +588,12 @@ const styles = StyleSheet.create({
   },
   customInput: {
     height: 44,
-    backgroundColor: colors.bgPrimary,
+    backgroundColor: colors.bgElevated,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.accent,
+    borderColor: colors.accentBorder,
     paddingHorizontal: spacing.md,
     ...typography.body,
     color: colors.textPrimary,
   },
-  startBtn: {
-    backgroundColor: colors.accent,
-    borderRadius: radius.lg,
-    paddingVertical: spacing.lg,
-    alignItems: "center",
-  },
-  startBtnDisabled: { backgroundColor: colors.disabled },
-  startBtnText: { ...typography.bodyMedium, color: colors.bgPrimary },
 });

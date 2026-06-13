@@ -1,36 +1,41 @@
-// theme.ts — Design tokens para Sapo Contador
-// Fondo blanco, tipografía generosa, acento verde-teal + coral para warning/ganador
+// theme.ts — Design tokens para Sapo Contador (Light)
+// Blanco/off-white + verde-teal + coral
 
 export const colors = {
-  // Backgrounds
-  bg: "#FFFFFF",
-  bgSecondary: "#F7F7F4",
-  bgPrimary: "#FFFFFF",
+  // Backgrounds (claro: página off-white, cards blancas, celdas hundidas)
+  bg: "#F7F7F4",
+  bgElevated: "#FFFFFF",
+  bgSunken: "#EDEDE8",
 
-  // Text
+  // Text (oscuro sobre claro)
   textPrimary: "#1A1A1A",
-  textSecondary: "#6B6B6B",
-  textTertiary: "#A8A8A8",
-  textDisabled: "#D4D4D0",
+  textSecondary: "#5F5F5B",
+  textTertiary: "#8A8A86",
+  textMuted: "#ABABA6",
+  textDisabled: "#C6C6C0",
 
   // Borders
   border: "#E5E5E0",
-  borderStrong: "#1A1A1A",
+  borderSubtle: "#D8D8D1",
 
-  // Accent: Verde-teal (jugador/equipo activo, primary actions, links)
+  // Accent: Verde-teal (activo, ganadores, CTAs)
   accent: "#0F9B8E",
-  accentBg: "#F4FBFA",
-  accentBgStrong: "#E6F4F2",
-  accentText: "#0A6F66",
+  accentDark: "#FFFFFF", // texto/íconos SOBRE el accent
+  accentBg: "#E6F4F2",
   accentBorder: "#B7E0DA",
 
-  // Warning/Highlight: Coral (ganador, acción destructiva, sapo)
-  warning: "#E8704A",
-  warningBg: "#FBE9E1",
-  warningText: "#B84A28",
+  // Secondary: Coral (ganador, torneo, pendientes)
+  gold: "#E8704A",
+  goldBg: "#FBE9E1",
+  goldBorder: "#F2C4B2",
 
-  // Estado disabled (botones)
-  disabled: "#D4D4D0",
+  // Danger / destructivo (salir de partida, eliminados)
+  danger: "#D64530",
+  dangerBg: "#FBE4DE",
+
+  // Estado disabled
+  disabled: "#E2E2DC",
+  disabledText: "#ABABA5",
 } as const;
 
 export const spacing = {
@@ -47,7 +52,7 @@ export const radius = {
   sm: 8,
   md: 10,
   lg: 14,
-  xl: 16,
+  xl: 18,
   pill: 999,
 } as const;
 
@@ -56,13 +61,13 @@ export const typography = {
   display: { fontSize: 64, fontWeight: "600" as const, lineHeight: 64 },
 
   // Score: puntaje principal del jugador/equipo en card de juego
-  score: { fontSize: 28, fontWeight: "600" as const, lineHeight: 30 },
-  scoreSmall: { fontSize: 20, fontWeight: "600" as const, lineHeight: 22 },
+  score: { fontSize: 30, fontWeight: "600" as const, lineHeight: 32 },
+  scoreSmall: { fontSize: 19, fontWeight: "600" as const, lineHeight: 22 },
 
-  // Heading: títulos de pantalla ("Sapo Contador", "Ganador")
-  heading: { fontSize: 22, fontWeight: "600" as const, lineHeight: 28 },
-  title: { fontSize: 18, fontWeight: "600" as const, lineHeight: 24 },
-  subtitle: { fontSize: 17, fontWeight: "500" as const, lineHeight: 22 },
+  // Heading: títulos de pantalla
+  heading: { fontSize: 23, fontWeight: "600" as const, lineHeight: 28 },
+  title: { fontSize: 19, fontWeight: "600" as const, lineHeight: 24 },
+  subtitle: { fontSize: 16, fontWeight: "500" as const, lineHeight: 22 },
 
   // Body
   body: { fontSize: 15, fontWeight: "400" as const, lineHeight: 22 },
@@ -71,6 +76,9 @@ export const typography = {
   // Player/team name en cards
   itemName: { fontSize: 16, fontWeight: "500" as const, lineHeight: 20 },
 
+  // Score input (torneo)
+  scoreInput: { fontSize: 19, fontWeight: "600" as const },
+
   // Numpad button label
   numpad: { fontSize: 24, fontWeight: "500" as const, lineHeight: 28 },
 
@@ -78,45 +86,32 @@ export const typography = {
   caption: { fontSize: 13, fontWeight: "400" as const, lineHeight: 18 },
   captionMedium: { fontSize: 13, fontWeight: "500" as const, lineHeight: 18 },
 
-  // Micro labels (TURNO 1, GANADOR, etc.) — uppercase con letter-spacing
+  // Micro labels — uppercase con letter-spacing
   micro: {
-    fontSize: 12,
-    fontWeight: "500" as const,
+    fontSize: 11,
+    fontWeight: "600" as const,
     lineHeight: 14,
-    letterSpacing: 0.8,
-    textTransform: "uppercase" as const,
-  },
-  microLarge: {
-    fontSize: 13,
-    fontWeight: "500" as const,
-    lineHeight: 15,
     letterSpacing: 1.2,
     textTransform: "uppercase" as const,
   },
+
+  // Tab bar label
+  tabLabel: { fontSize: 11, fontWeight: "600" as const, lineHeight: 14 },
+
+  // Chip
+  chip: { fontSize: 14, fontWeight: "500" as const, lineHeight: 18 },
 } as const;
 
-// Colores rotativos para equipos (cuando hay más de 2)
+// Colores rotativos para equipos
 export const teamColors = [
-  colors.accent, // Verde-teal (equipo 1)
-  colors.warning, // Coral (equipo 2)
-  "#7B5CD6", // Violeta (equipo 3)
-  "#E8B84A", // Amarillo mostaza (equipo 4)
+  colors.accent,
+  colors.gold,
+  "#7B8CF8",
+  "#E88B6E",
 ] as const;
 
-// Sombras (Android elevation + iOS shadowProps)
-export const shadows = {
-  sm: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  md: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
+// Score input sizing (torneo)
+export const scoreInputSize = {
+  width: 64,
+  height: 42,
 } as const;
