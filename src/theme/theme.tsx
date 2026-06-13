@@ -1,41 +1,41 @@
-// theme.ts — Design tokens para Sapo Contador (Dark Premium)
-// Carbón verdoso + verde esmeralda + dorado apagado
+// theme.ts — Design tokens para Sapo Contador (Light)
+// Blanco/off-white + verde-teal + coral
 
 export const colors = {
-  // Backgrounds (capas de elevación)
-  bg: "#131614",
-  bgElevated: "#1C201D",
-  bgSunken: "#0C0E0C",
+  // Backgrounds (claro: página off-white, cards blancas, celdas hundidas)
+  bg: "#F7F7F4",
+  bgElevated: "#FFFFFF",
+  bgSunken: "#EDEDE8",
 
-  // Text
-  textPrimary: "#F2F4F2",
-  textSecondary: "#A8AEA9",
-  textTertiary: "#6E756F",
-  textMuted: "#5C635D",
-  textDisabled: "#3E443F",
+  // Text (oscuro sobre claro)
+  textPrimary: "#1A1A1A",
+  textSecondary: "#5F5F5B",
+  textTertiary: "#8A8A86",
+  textMuted: "#ABABA6",
+  textDisabled: "#C6C6C0",
 
   // Borders
-  border: "#2A2F2B",
-  borderSubtle: "#343A35",
+  border: "#E5E5E0",
+  borderSubtle: "#D8D8D1",
 
-  // Accent: Verde esmeralda (activo, ganadores, CTAs)
-  accent: "#34C28A",
-  accentDark: "#0C0E0C",
-  accentBg: "rgba(52,194,138,0.12)",
-  accentBorder: "rgba(52,194,138,0.3)",
+  // Accent: Verde-teal (activo, ganadores, CTAs)
+  accent: "#0F9B8E",
+  accentDark: "#FFFFFF", // texto/íconos SOBRE el accent
+  accentBg: "#E6F4F2",
+  accentBorder: "#B7E0DA",
 
-  // Secondary: Dorado apagado (torneo, pendientes, byes)
-  gold: "#D4AF55",
-  goldBg: "rgba(212,175,85,0.12)",
-  goldBorder: "rgba(212,175,85,0.3)",
+  // Secondary: Coral (ganador, torneo, pendientes)
+  gold: "#E8704A",
+  goldBg: "#FBE9E1",
+  goldBorder: "#F2C4B2",
 
   // Danger / destructivo (salir de partida, eliminados)
-  danger: "#E05A3A",
-  dangerBg: "rgba(224,90,58,0.12)",
+  danger: "#D64530",
+  dangerBg: "#FBE4DE",
 
   // Estado disabled
-  disabled: "#2A2F2B",
-  disabledText: "#5C635D",
+  disabled: "#E2E2DC",
+  disabledText: "#ABABA5",
 } as const;
 
 export const spacing = {

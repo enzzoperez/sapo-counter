@@ -13,7 +13,7 @@ export default function RootLayout() {
 
   return (
     <GameProvider>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }} />
     </GameProvider>
   );
