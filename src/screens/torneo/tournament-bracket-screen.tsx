@@ -89,7 +89,17 @@ export function TournamentBracketScreen() {
           />
         </TouchableOpacity>
         <View style={styles.center} />
-        <View style={styles.sideBtn} />
+        <TouchableOpacity
+          onPress={() => router.push("/torneo/llaves")}
+          style={styles.llavesBtn}
+        >
+          <MaterialCommunityIcons
+            name="sitemap-outline"
+            size={16}
+            color={colors.accent}
+          />
+          <Text style={styles.llavesText}>Llaves</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Round nav */}
@@ -187,6 +197,13 @@ const styles = StyleSheet.create({
   },
   sideBtn: { width: 40, alignItems: "center" },
   center: { flex: 1 },
+  llavesBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
+  },
+  llavesText: { ...typography.captionMedium, color: colors.accent },
   roundNav: {
     flexDirection: "row",
     alignItems: "center",

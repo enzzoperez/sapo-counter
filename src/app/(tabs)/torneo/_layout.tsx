@@ -6,6 +6,7 @@ export default function TorneoLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="bracket" options={{ gestureEnabled: false }} />
       <Stack.Screen name="champion" options={{ gestureEnabled: false }} />
+      <Stack.Screen name="llaves" options={{ presentation: "fullScreenModal" }} />
     </Stack>
   );
 }
