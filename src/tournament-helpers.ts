@@ -80,52 +80,76 @@ export function propagate(
   return copy;
 }
 
+/** Descriptive round label (Final / Semifinales / Cuartos / Ronda N). Display only. */
+export function roundName(roundIdx: number, totalRounds: number): string {
+  const fromEnd = totalRounds - 1 - roundIdx;
+  if (fromEnd === 0) return "Final";
+  if (fromEnd === 1) return "Semifinales";
+  if (fromEnd === 2) return "Cuartos";
+  return `Ronda ${roundIdx + 1}`;
+}
+
 /**
- * "Ladder" bracket: every round pairs participants two-by-two; if a round has an
- * odd count, the last participant gets a bye into the next round. So everyone plays
- * the first round and byes only appear where an odd count forces them.
+ * Single-elimination bracket with all byes in round 1. Pads to the next power of two;
+ * the first `byes` round-1 slots are byes (one player advancing), the rest are real
+ * 2-player matches. After round 1 exactly P/2 players remain → a clean power-of-two
+ * bracket to the final, so nobody reaches later rounds without having played.
  */
 export function generateBracket(players: string[]): TournamentState {
   const shuffled = shuffle(players);
   const n = shuffled.length;
 
-  // Participant count entering each round: c0 = n, c[r+1] = ceil(c[r] / 2) → 1.
-  const counts = [n];
-  while (counts[counts.length - 1] > 1) {
-    counts.push(Math.ceil(counts[counts.length - 1] / 2));
+  // Next power of two >= n, and the number of rounds to reach it.
+  let size = 1;
+  let totalRounds = 0;
+  while (size < n) {
+    size *= 2;
+    totalRounds++;
   }
-  const totalRounds = counts.length - 1; // rounds that hold matches
+  const byes = size - n;
+  const r1Cards = size / 2;
 
   const mk = (name: string): MatchPlayer => ({ id: genId(), name, score: null });
 
-  const rounds: Match[][] = [];
-  for (let r = 0; r < totalRounds; r++) {
-    const incoming = counts[r];
-    const cardCount = Math.ceil(incoming / 2);
-    const oddBye = incoming % 2 === 1; // last card of this round is a bye
-    const round: Match[] = [];
-    for (let i = 0; i < cardCount; i++) {
-      const isBye = oddBye && i === cardCount - 1;
-      // Round 0 is seeded with the shuffled players; later rounds fill via propagation.
-      const p1 = r === 0 && 2 * i < n ? mk(shuffled[2 * i]) : null;
-      const p2 = r === 0 && 2 * i + 1 < n ? mk(shuffled[2 * i + 1]) : null;
-      round.push({
+  // Round 1: the first `byes` cards are byes (single player), the rest real matches.
+  let idx = 0;
+  const round0: Match[] = [];
+  for (let i = 0; i < r1Cards; i++) {
+    const isBye = i < byes;
+    const p1 = mk(shuffled[idx++]);
+    const p2 = isBye ? null : mk(shuffled[idx++]);
+    round0.push({
+      id: genId(),
+      round: 0,
+      position: i,
+      player1: p1,
+      player2: p2,
+      winnerId: isBye ? p1.id : null,
+      isBye,
+    });
+  }
+
+  // Clean power-of-two rounds after round 1.
+  const rounds: Match[][] = [round0];
+  for (let r = 1; r < totalRounds; r++) {
+    const count = size / 2 ** (r + 1);
+    rounds.push(
+      Array.from({ length: count }, (_, i) => ({
         id: genId(),
         round: r,
         position: i,
-        player1: p1,
-        player2: p2,
-        winnerId: isBye && p1 ? p1.id : null,
-        isBye,
-      });
-    }
-    rounds.push(round);
+        player1: null,
+        player2: null,
+        winnerId: null,
+        isBye: false,
+      })),
+    );
   }
 
-  // Propagate any round-0 byes forward (chains through later byes automatically).
+  // Propagate round-1 bye winners into round 2.
   let propagated = rounds;
-  rounds[0].forEach((m, i) => {
-    if (m.isBye && m.player1) propagated = propagate(propagated, 0, i);
+  round0.forEach((m, i) => {
+    if (m.isBye) propagated = propagate(propagated, 0, i);
   });
 
   const finalMatch = propagated[totalRounds - 1][0];
