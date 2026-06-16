@@ -1,6 +1,5 @@
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { colors, spacing, radius, typography } from "@/theme/theme";
-import { roundName } from "@/tournament-helpers";
 import type { Match, MatchPlayer } from "@/types";
 
 type Props = { rounds: Match[][]; totalRounds: number };
@@ -69,7 +68,7 @@ export function BracketTree({ rounds, totalRounds }: Props) {
       {rounds.map((round, r) => (
         <View key={r} style={styles.column}>
           <Text style={styles.columnTitle}>
-            {roundName(r, totalRounds)}
+            {r === totalRounds - 1 ? "Final" : `Ronda ${r + 1}`}
           </Text>
           <View style={styles.columnMatches}>
             {round.map((m) => (
