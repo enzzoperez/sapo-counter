@@ -15,7 +15,7 @@ import { colors, spacing, typography } from "@/theme/theme";
 import { MatchCard } from "@/components/torneo/match-card";
 import { RoundIndicator } from "@/components/torneo/round-indicator";
 import { PrimaryButton } from "@/components/shared/primary-button";
-import { isRoundComplete } from "@/tournament-helpers";
+import { isRoundComplete, roundName } from "@/tournament-helpers";
 import { useTournament } from "@/state/tournament-context";
 
 export function TournamentBracketScreen() {
@@ -65,10 +65,7 @@ export function TournamentBracketScreen() {
   const isFinal = currentRound === totalRounds - 1;
   const partidos = round.filter((m) => !m.isBye).length;
   const libres = round.filter((m) => m.isBye).length;
-  const nextRoundLabel =
-    currentRound + 1 === totalRounds - 1
-      ? "la final"
-      : `la ronda ${currentRound + 2}`;
+  const nextRoundLabel = roundName(currentRound + 1, totalRounds);
 
   const canPrev = currentRound > 0;
   const canNext = currentRound < totalRounds - 1;
@@ -118,7 +115,7 @@ export function TournamentBracketScreen() {
 
         <View style={styles.roundInfo}>
           <Text style={styles.roundTitle}>
-            {isFinal ? "Final" : `Ronda ${currentRound + 1}`}
+            {roundName(currentRound, totalRounds)}
           </Text>
           <Text style={styles.roundSubtitle}>
             {partidos} {partidos === 1 ? "partido" : "partidos"}
