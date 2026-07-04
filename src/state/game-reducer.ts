@@ -1,6 +1,6 @@
 import type { GameState } from "../types";
 import type { GameSetup } from "../types";
-import { isFinished } from "../helpers";
+import { isFinished, shuffle } from "../helpers";
 
 export type Action =
   | { type: "START_GAME"; payload: GameSetup }
@@ -19,11 +19,13 @@ export function gameReducer(
 ): GameState | null {
   switch (action.type) {
     case "START_GAME":
+      // Sorteo: randomize participant order (and member order within teams).
       return {
         ...action.payload,
-        participants: action.payload.participants.map((p) => ({
+        participants: shuffle(action.payload.participants).map((p) => ({
           ...p,
           turns: [],
+          members: p.members ? shuffle(p.members) : p.members,
         })),
         currentTurnIdx: 0,
         currentParticipantIdx: 0,

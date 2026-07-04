@@ -7,9 +7,10 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "expo-router";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { colors, spacing, radius, typography, teamColors } from "@/theme/theme";
@@ -33,6 +34,7 @@ function makeTeam(membersCount: number): TeamDraft {
   };
 }
 
+const SORTEO_DELAY_MS = 1500;
 const TURNS_OPTIONS = [2, 3, 4, 5];
 const TARGET_OPTIONS = [100, 200, 300, 500];
 const MEMBERS_OPTIONS = [2, 3, 4];
@@ -40,6 +42,15 @@ const MEMBERS_OPTIONS = [2, 3, 4];
 export function SetupScreen() {
   const router = useRouter();
   const { dispatch } = useGame();
+
+  const [sorteando, setSorteando] = useState(false);
+  const sorteoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (sorteoTimer.current) clearTimeout(sorteoTimer.current);
+    },
+    [],
+  );
 
   const [format, setFormat] = useState<Format>("individual");
   const [membersPerTeam, setMembersPerTeam] = useState(2);
@@ -116,6 +127,7 @@ export function SetupScreen() {
   }
 
   function handleStart() {
+    if (sorteando) return;
     const participants: Participant[] =
       format === "individual"
         ? players.map((p, i) => ({
@@ -134,18 +146,22 @@ export function SetupScreen() {
             turns: [],
           }));
 
-    dispatch({
-      type: "START_GAME",
-      payload: {
-        mode,
-        format,
-        membersPerTeam,
-        totalTurns: mode === "turns" ? totalTurns : undefined,
-        targetScore: mode === "goal" ? targetScore : undefined,
-        participants,
-      },
-    });
-    router.push("/game");
+    const payload = {
+      mode,
+      format,
+      membersPerTeam,
+      totalTurns: mode === "turns" ? totalTurns : undefined,
+      targetScore: mode === "goal" ? targetScore : undefined,
+      participants,
+    };
+
+    // Small delay so the user perceives the random draw ("Sorteando…").
+    setSorteando(true);
+    sorteoTimer.current = setTimeout(() => {
+      dispatch({ type: "START_GAME", payload });
+      router.push("/game");
+      setSorteando(false);
+    }, SORTEO_DELAY_MS);
   }
 
   const canStart =
@@ -426,9 +442,14 @@ export function SetupScreen() {
         {/* Fixed bottom action */}
         <View style={styles.bottom}>
           <PrimaryButton
-            label="Empezar partida"
+            label={sorteando ? "Sorteando…" : "Empezar partida"}
             onPress={handleStart}
-            disabled={!canStart}
+            disabled={!canStart || sorteando}
+            icon={
+              sorteando ? (
+                <ActivityIndicator size="small" color={colors.disabledText} />
+              ) : undefined
+            }
           />
         </View>
       </KeyboardAvoidingView>
