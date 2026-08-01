@@ -8,20 +8,29 @@ import {
   BackHandler,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { colors, spacing, typography } from "@/theme/theme";
 import { MatchCard } from "@/components/torneo/match-card";
 import { RoundIndicator } from "@/components/torneo/round-indicator";
 import { PrimaryButton } from "@/components/shared/primary-button";
+import { ShareBanner } from "@/components/shared/share-banner";
+import { ShareBottomSheet } from "@/components/shared/share-bottom-sheet";
+import { BroadcastButton } from "@/components/shared/broadcast-button";
 import { isRoundComplete, roundName } from "@/tournament-helpers";
 import { useTournament } from "@/state/tournament-context";
+import { generateRoomCode } from "@/utils/room-code";
 
 export function TournamentBracketScreen() {
   const router = useRouter();
   const { state, dispatch } = useTournament();
   const pushedToChampion = useRef(false);
+
+  // Live-share UI (mocked, no backend)
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [shareSheetVisible, setShareSheetVisible] = useState(false);
+  const [roomCode] = useState(generateRoomCode);
 
   function discard() {
     Alert.alert("¿Descartar torneo?", "Se va a perder el bracket actual.", [
@@ -86,17 +95,22 @@ export function TournamentBracketScreen() {
           />
         </TouchableOpacity>
         <View style={styles.center} />
-        <TouchableOpacity
-          onPress={() => router.push("/torneo/llaves")}
-          style={styles.llavesBtn}
-        >
-          <MaterialCommunityIcons
-            name="sitemap-outline"
-            size={16}
-            color={colors.accent}
-          />
-          <Text style={styles.llavesText}>Llaves</Text>
-        </TouchableOpacity>
+        <View style={styles.topRight}>
+          {bannerDismissed && (
+            <BroadcastButton onPress={() => setShareSheetVisible(true)} />
+          )}
+          <TouchableOpacity
+            onPress={() => router.push("/torneo/llaves")}
+            style={styles.llavesBtn}
+          >
+            <MaterialCommunityIcons
+              name="sitemap-outline"
+              size={16}
+              color={colors.accent}
+            />
+            <Text style={styles.llavesText}>Llaves</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Round nav */}
@@ -137,6 +151,18 @@ export function TournamentBracketScreen() {
       </View>
 
       <RoundIndicator total={totalRounds} current={currentRound} />
+
+      {/* Live-share banner */}
+      {!bannerDismissed && (
+        <ShareBanner
+          variant="torneo"
+          onShare={() => {
+            setBannerDismissed(true);
+            setShareSheetVisible(true);
+          }}
+          onDismiss={() => setBannerDismissed(true)}
+        />
+      )}
 
       {/* Matches */}
       <ScrollView
@@ -179,6 +205,12 @@ export function TournamentBracketScreen() {
           />
         </View>
       )}
+
+      <ShareBottomSheet
+        visible={shareSheetVisible}
+        onClose={() => setShareSheetVisible(false)}
+        roomCode={roomCode}
+      />
     </SafeAreaView>
   );
 }
@@ -194,6 +226,7 @@ const styles = StyleSheet.create({
   },
   sideBtn: { width: 40, alignItems: "center" },
   center: { flex: 1 },
+  topRight: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   llavesBtn: {
     flexDirection: "row",
     alignItems: "center",

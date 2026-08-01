@@ -9,20 +9,29 @@ import {
   BackHandler,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "expo-router";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { colors, spacing, typography } from "@/theme/theme";
 import { ParticipantCard } from "@/components/contador/participant-card";
 import { PrimaryButton } from "@/components/shared/primary-button";
+import { ShareBanner } from "@/components/shared/share-banner";
+import { ShareBottomSheet } from "@/components/shared/share-bottom-sheet";
+import { BroadcastButton } from "@/components/shared/broadcast-button";
 import { useGame } from "@/state/game-context";
 import { totalScore } from "@/helpers";
+import { generateRoomCode } from "@/utils/room-code";
 
 export function GameScreen() {
   const router = useRouter();
   const { state, dispatch } = useGame();
   // Prevents pushing /final multiple times while GameScreen is in background
   const pushedToFinal = useRef(false);
+
+  // Live-share UI (mocked, no backend)
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [shareSheetVisible, setShareSheetVisible] = useState(false);
+  const [roomCode] = useState(generateRoomCode);
 
   function showAbandonAlert() {
     Alert.alert("¿Salir de la partida?", "Vas a perder el progreso actual.", [
@@ -116,8 +125,24 @@ export function GameScreen() {
             </View>
           )}
         </View>
-        <View style={styles.headerSideBtn} />
+        {bannerDismissed ? (
+          <BroadcastButton onPress={() => setShareSheetVisible(true)} />
+        ) : (
+          <View style={styles.headerSideBtn} />
+        )}
       </View>
+
+      {/* Live-share banner */}
+      {!bannerDismissed && (
+        <ShareBanner
+          variant="contador"
+          onShare={() => {
+            setBannerDismissed(true);
+            setShareSheetVisible(true);
+          }}
+          onDismiss={() => setBannerDismissed(true)}
+        />
+      )}
 
       {/* Cards */}
       <ScrollView
@@ -150,6 +175,12 @@ export function GameScreen() {
           </Text>
         )}
       </View>
+
+      <ShareBottomSheet
+        visible={shareSheetVisible}
+        onClose={() => setShareSheetVisible(false)}
+        roomCode={roomCode}
+      />
     </SafeAreaView>
   );
 }
