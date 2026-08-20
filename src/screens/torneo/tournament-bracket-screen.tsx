@@ -20,17 +20,25 @@ import { ShareBottomSheet } from "@/components/shared/share-bottom-sheet";
 import { BroadcastButton } from "@/components/shared/broadcast-button";
 import { isRoundComplete, roundName } from "@/tournament-helpers";
 import { useTournament } from "@/state/tournament-context";
-import { generateRoomCode } from "@/utils/room-code";
+import { useShareRoom } from "@/hooks/use-share-room";
+import { serializeTournamentState } from "@/lib/serialize";
 
 export function TournamentBracketScreen() {
   const router = useRouter();
   const { state, dispatch } = useTournament();
   const pushedToChampion = useRef(false);
 
-  // Live-share UI (mocked, no backend)
+  // Live-share
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [shareSheetVisible, setShareSheetVisible] = useState(false);
-  const [roomCode] = useState(generateRoomCode);
+  const { isLive, roomCode, startSharing, syncState } = useShareRoom();
+
+  // Push tournament state to Firebase while sharing is live
+  useEffect(() => {
+    if (isLive && state) {
+      syncState({ type: "torneo", tournament: serializeTournamentState(state) });
+    }
+  }, [state, isLive, syncState]);
 
   function discard() {
     Alert.alert("¿Descartar torneo?", "Se va a perder el bracket actual.", [
@@ -83,6 +91,17 @@ export function TournamentBracketScreen() {
     dispatch({ type: "SET_ROUND", round: currentRound + delta });
   }
 
+  async function handleShare() {
+    if (!state) return;
+    if (!isLive) {
+      await startSharing({
+        type: "torneo",
+        tournament: serializeTournamentState(state),
+      });
+    }
+    setShareSheetVisible(true);
+  }
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       {/* Top bar */}
@@ -96,8 +115,8 @@ export function TournamentBracketScreen() {
         </TouchableOpacity>
         <View style={styles.center} />
         <View style={styles.topRight}>
-          {bannerDismissed && (
-            <BroadcastButton onPress={() => setShareSheetVisible(true)} />
+          {(isLive || bannerDismissed) && (
+            <BroadcastButton onPress={handleShare} />
           )}
           <TouchableOpacity
             onPress={() => router.push("/torneo/llaves")}
@@ -153,12 +172,12 @@ export function TournamentBracketScreen() {
       <RoundIndicator total={totalRounds} current={currentRound} />
 
       {/* Live-share banner */}
-      {!bannerDismissed && (
+      {!bannerDismissed && !isLive && (
         <ShareBanner
           variant="torneo"
           onShare={() => {
             setBannerDismissed(true);
-            setShareSheetVisible(true);
+            handleShare();
           }}
           onDismiss={() => setBannerDismissed(true)}
         />
@@ -209,7 +228,7 @@ export function TournamentBracketScreen() {
       <ShareBottomSheet
         visible={shareSheetVisible}
         onClose={() => setShareSheetVisible(false)}
-        roomCode={roomCode}
+        roomCode={roomCode ?? ""}
       />
     </SafeAreaView>
   );

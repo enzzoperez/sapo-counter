@@ -23,7 +23,10 @@ type Props = {
 
 export function ShareBottomSheet({ visible, onClose, roomCode }: Props) {
   const insets = useSafeAreaInsets();
-  const url = `https://sapocontador.app/${roomCode}`;
+  const viewerBase =
+    process.env.EXPO_PUBLIC_VIEWER_URL ?? "https://sapo-counter.web.app";
+  const url = `${viewerBase}/${roomCode}`;
+  const displayUrl = url.replace(/^https?:\/\//, "");
   const [copied, setCopied] = useState(false);
 
   async function copyCode() {
@@ -80,7 +83,7 @@ export function ShareBottomSheet({ visible, onClose, roomCode }: Props) {
             </TouchableOpacity>
           </View>
           <Text style={[styles.url, copied && styles.copied]}>
-            {copied ? "¡Copiado!" : `sapocontador.app/${roomCode}`}
+            {copied ? "¡Copiado!" : displayUrl}
           </Text>
 
           <View style={styles.actions}>
