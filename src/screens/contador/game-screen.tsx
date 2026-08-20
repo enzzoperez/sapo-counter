@@ -20,7 +20,8 @@ import { ShareBottomSheet } from "@/components/shared/share-bottom-sheet";
 import { BroadcastButton } from "@/components/shared/broadcast-button";
 import { useGame } from "@/state/game-context";
 import { totalScore } from "@/helpers";
-import { generateRoomCode } from "@/utils/room-code";
+import { useShareRoom } from "@/hooks/use-share-room";
+import { serializeGameState } from "@/lib/serialize";
 
 export function GameScreen() {
   const router = useRouter();
@@ -28,10 +29,17 @@ export function GameScreen() {
   // Prevents pushing /final multiple times while GameScreen is in background
   const pushedToFinal = useRef(false);
 
-  // Live-share UI (mocked, no backend)
+  // Live-share
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [shareSheetVisible, setShareSheetVisible] = useState(false);
-  const [roomCode] = useState(generateRoomCode);
+  const { isLive, roomCode, startSharing, syncState } = useShareRoom();
+
+  // Push game state to Firebase while sharing is live
+  useEffect(() => {
+    if (isLive && state) {
+      syncState({ type: "contador", game: serializeGameState(state) });
+    }
+  }, [state, isLive, syncState]);
 
   function showAbandonAlert() {
     Alert.alert("¿Salir de la partida?", "Vas a perder el progreso actual.", [
@@ -91,6 +99,14 @@ export function GameScreen() {
     router.push("/annotate");
   }
 
+  async function handleShare() {
+    if (!state) return;
+    if (!isLive) {
+      await startSharing({ type: "contador", game: serializeGameState(state) });
+    }
+    setShareSheetVisible(true);
+  }
+
   const annotateLabel = currentMember
     ? `Anotar: ${currentMember.name} · ${activeParticipant.name}`
     : `Anotar turno de ${activeParticipant.name}`;
@@ -125,20 +141,20 @@ export function GameScreen() {
             </View>
           )}
         </View>
-        {bannerDismissed ? (
-          <BroadcastButton onPress={() => setShareSheetVisible(true)} />
+        {isLive || bannerDismissed ? (
+          <BroadcastButton onPress={handleShare} />
         ) : (
           <View style={styles.headerSideBtn} />
         )}
       </View>
 
       {/* Live-share banner */}
-      {!bannerDismissed && (
+      {!bannerDismissed && !isLive && (
         <ShareBanner
           variant="contador"
           onShare={() => {
             setBannerDismissed(true);
-            setShareSheetVisible(true);
+            handleShare();
           }}
           onDismiss={() => setBannerDismissed(true)}
         />
@@ -179,7 +195,7 @@ export function GameScreen() {
       <ShareBottomSheet
         visible={shareSheetVisible}
         onClose={() => setShareSheetVisible(false)}
-        roomCode={roomCode}
+        roomCode={roomCode ?? ""}
       />
     </SafeAreaView>
   );
