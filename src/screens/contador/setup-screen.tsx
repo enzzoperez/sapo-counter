@@ -10,14 +10,16 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentProps } from "react";
 import { useRouter } from "expo-router";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { colors, spacing, radius, typography, teamColors } from "@/theme/theme";
 import { Pill } from "@/components/shared/pill";
 import { PrimaryButton } from "@/components/shared/primary-button";
+import { PlayerChip } from "@/components/torneo/player-chip";
+import { SorteoResultSheet } from "@/components/contador/sorteo-result-sheet";
 import { useGame } from "@/state/game-context";
-import { genId } from "@/helpers";
+import { genId, shuffle } from "@/helpers";
 import type { Format, Mode, Participant } from "@/types";
 
 type PlayerDraft = { id: string; name: string };
@@ -62,6 +64,13 @@ export function SetupScreen() {
     makePlayer(),
   ]);
   const [teams, setTeams] = useState<TeamDraft[]>([makeTeam(2), makeTeam(2)]);
+
+  // Team draw (sorteo) — all local state
+  const [teamMode, setTeamMode] = useState<"manual" | "sorteo">("manual");
+  const [sorteoInput, setSorteoInput] = useState("");
+  const [sorteoPlayers, setSorteoPlayers] = useState<string[]>([]);
+  const [sorteoResult, setSorteoResult] = useState<string[][] | null>(null);
+  const [showSorteoSheet, setShowSorteoSheet] = useState(false);
 
   const [mode, setMode] = useState<Mode>("turns");
   const [totalTurns, setTotalTurns] = useState(3);
@@ -126,6 +135,51 @@ export function SetupScreen() {
     setTeams((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  function addSorteoPlayer() {
+    const name = sorteoInput.trim();
+    if (!name) return;
+    setSorteoPlayers((prev) => [...prev, name]);
+    setSorteoInput("");
+  }
+  function removeSorteoPlayer(idx: number) {
+    setSorteoPlayers((prev) => prev.filter((_, i) => i !== idx));
+  }
+  function doSorteo() {
+    const shuffled = shuffle(sorteoPlayers);
+    const chunks: string[][] = [];
+    for (let i = 0; i < shuffled.length; i += membersPerTeam) {
+      chunks.push(shuffled.slice(i, i + membersPerTeam));
+    }
+    setSorteoResult(chunks);
+    setShowSorteoSheet(true);
+  }
+  function handleStartSorteo() {
+    if (!sorteoResult) return;
+    const participants: Participant[] = sorteoResult.map((team, idx) => ({
+      id: `team-${idx}`,
+      name: `Equipo ${idx + 1}`,
+      color: teamColors[idx % teamColors.length],
+      members: team.map((name, mIdx) => ({
+        id: `player-${idx}-${mIdx}`,
+        name,
+      })),
+      turns: [],
+    }));
+    dispatch({
+      type: "START_GAME",
+      payload: {
+        mode,
+        format: "teams",
+        membersPerTeam,
+        totalTurns: mode === "turns" ? totalTurns : undefined,
+        targetScore: mode === "goal" ? targetScore : undefined,
+        participants,
+      },
+    });
+    setShowSorteoSheet(false);
+    router.push("/game");
+  }
+
   function handleStart() {
     if (sorteando) return;
     const participants: Participant[] =
@@ -167,6 +221,18 @@ export function SetupScreen() {
   const canStart =
     format === "individual" ? players.length >= 2 : teams.length >= 2;
 
+  const isSorteo = format === "teams" && teamMode === "sorteo";
+  const sorteoCount = sorteoPlayers.length;
+  const equipos = Math.floor(sorteoCount / membersPerTeam);
+  const resto = sorteoCount % membersPerTeam;
+  const canSorteo = equipos >= 2 && resto === 0;
+  const sorteoHint =
+    resto !== 0
+      ? `Necesitás ${(equipos + 1) * membersPerTeam} jugadores para ${equipos + 1} equipos de ${membersPerTeam}`
+      : equipos < 2
+        ? `Necesitás al menos ${membersPerTeam * 2} jugadores (2 equipos)`
+        : "";
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
@@ -207,6 +273,26 @@ export function SetupScreen() {
               />
             </View>
           </Section>
+
+          {/* How to build teams (only for teams format) */}
+          {format === "teams" && (
+            <Section label="Armar equipos">
+              <View style={styles.toggleRow}>
+                <ToggleCard
+                  label="Manual"
+                  iconName="pencil"
+                  active={teamMode === "manual"}
+                  onPress={() => setTeamMode("manual")}
+                />
+                <ToggleCard
+                  label="Sorteo"
+                  iconName="shuffle-variant"
+                  active={teamMode === "sorteo"}
+                  onPress={() => setTeamMode("sorteo")}
+                />
+              </View>
+            </Section>
+          )}
 
           {/* Members per team */}
           {format === "teams" && (
@@ -281,7 +367,7 @@ export function SetupScreen() {
                 <Text style={styles.addBtnText}>Agregar jugador</Text>
               </TouchableOpacity>
             </Section>
-          ) : (
+          ) : teamMode === "manual" ? (
             <Section label="Equipos">
               {teams.map((team, ti) => (
                 <View
@@ -340,6 +426,47 @@ export function SetupScreen() {
                 <Feather name="plus" size={16} color={colors.accent} />
                 <Text style={styles.addBtnText}>Agregar equipo</Text>
               </TouchableOpacity>
+            </Section>
+          ) : (
+            <Section label="Jugadores">
+              <View style={styles.sorteoInputRow}>
+                <TextInput
+                  style={styles.sorteoInput}
+                  value={sorteoInput}
+                  onChangeText={setSorteoInput}
+                  placeholder="Nombre del jugador"
+                  placeholderTextColor={colors.textMuted}
+                  onSubmitEditing={addSorteoPlayer}
+                  returnKeyType="done"
+                  blurOnSubmit={false}
+                />
+                <TouchableOpacity
+                  style={styles.sorteoAddBtn}
+                  onPress={addSorteoPlayer}
+                >
+                  <Feather name="plus" size={22} color={colors.accentDark} />
+                </TouchableOpacity>
+              </View>
+              {sorteoPlayers.length > 0 && (
+                <View style={styles.chips}>
+                  {sorteoPlayers.map((name, i) => (
+                    <PlayerChip
+                      key={`${name}-${i}`}
+                      name={name}
+                      onRemove={() => removeSorteoPlayer(i)}
+                    />
+                  ))}
+                </View>
+              )}
+              {sorteoCount > 0 && (
+                <Text style={styles.infoLine}>
+                  {sorteoCount} jugadores → {equipos}{" "}
+                  {equipos === 1 ? "equipo" : "equipos"} de {membersPerTeam}
+                  {resto > 0 ? (
+                    <Text style={styles.infoWarn}> (sobra {resto})</Text>
+                  ) : null}
+                </Text>
+              )}
             </Section>
           )}
 
@@ -441,17 +568,45 @@ export function SetupScreen() {
 
         {/* Fixed bottom action */}
         <View style={styles.bottom}>
-          <PrimaryButton
-            label={sorteando ? "Sorteando…" : "Empezar partida"}
-            onPress={handleStart}
-            disabled={!canStart || sorteando}
-            icon={
-              sorteando ? (
-                <ActivityIndicator size="small" color={colors.disabledText} />
-              ) : undefined
-            }
-          />
+          {isSorteo ? (
+            <>
+              <PrimaryButton
+                label="Sortear y empezar"
+                onPress={doSorteo}
+                disabled={!canSorteo}
+                icon={
+                  <MaterialCommunityIcons
+                    name="shuffle-variant"
+                    size={18}
+                    color={canSorteo ? colors.accentDark : colors.disabledText}
+                  />
+                }
+              />
+              {!canSorteo && sorteoCount > 0 && (
+                <Text style={styles.hint}>{sorteoHint}</Text>
+              )}
+            </>
+          ) : (
+            <PrimaryButton
+              label={sorteando ? "Sorteando…" : "Empezar partida"}
+              onPress={handleStart}
+              disabled={!canStart || sorteando}
+              icon={
+                sorteando ? (
+                  <ActivityIndicator size="small" color={colors.disabledText} />
+                ) : undefined
+              }
+            />
+          )}
         </View>
+
+        <SorteoResultSheet
+          visible={showSorteoSheet}
+          teams={sorteoResult ?? []}
+          onResortear={doSorteo}
+          onEmpezar={handleStartSorteo}
+          onClose={() => setShowSorteoSheet(false)}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -476,10 +631,12 @@ function ToggleCard({
   label,
   active,
   onPress,
+  iconName,
 }: {
   label: string;
   active: boolean;
   onPress: () => void;
+  iconName?: ComponentProps<typeof MaterialCommunityIcons>["name"];
 }) {
   return (
     <TouchableOpacity
@@ -487,11 +644,23 @@ function ToggleCard({
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Text
-        style={[styles.toggleCardLabel, active && styles.toggleCardLabelActive]}
-      >
-        {label}
-      </Text>
+      <View style={styles.toggleCardInner}>
+        {iconName && (
+          <MaterialCommunityIcons
+            name={iconName}
+            size={16}
+            color={active ? colors.accent : colors.textSecondary}
+          />
+        )}
+        <Text
+          style={[
+            styles.toggleCardLabel,
+            active && styles.toggleCardLabelActive,
+          ]}
+        >
+          {label}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -543,6 +712,40 @@ const styles = StyleSheet.create({
   },
   toggleCardLabel: { ...typography.bodyMedium, color: colors.textSecondary },
   toggleCardLabelActive: { color: colors.accent },
+  toggleCardInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs + 2,
+  },
+  sorteoInputRow: { flexDirection: "row", gap: spacing.sm },
+  sorteoInput: {
+    flex: 1,
+    height: 48,
+    backgroundColor: colors.bgElevated,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    ...typography.itemName,
+    color: colors.textPrimary,
+  },
+  sorteoAddBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.md,
+    backgroundColor: colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  infoLine: { ...typography.caption, color: colors.textTertiary },
+  infoWarn: { color: colors.gold },
+  hint: {
+    ...typography.caption,
+    color: colors.gold,
+    textAlign: "center",
+    marginTop: spacing.sm,
+  },
   listCard: {
     backgroundColor: colors.bgElevated,
     borderRadius: radius.md,
